@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<main role="main">
+    <div class="container">
+        <br>
+        <span>* Edit image</span><br><br>
+        <form name='dropzone' action='/ads/edit-upload/{{ aid }}' class='dropzone'>
+            <div class='fallback'>
+                <input name='file' type='file' multiple />
+            </div>
+        </form>
+        <br>
+        <input type="button" id='uploadfiles' class="btn btn-primary" value='Upload images'>
+    </div>
+    <br>
+    <hr>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="{{ url_for('static', path='/js/dropzone.js') }}"></script>
+    <script>
+        Dropzone.autoDiscover = false;
+        // remaining images to disable upload more than 3 files 
+        var count = 3 - {{ img_count }}
+        var myDropzone = new Dropzone(".dropzone", {
+            url: '/ads/edit-upload/{{ aid }}',
+            autoProcessQueue: false,
+            parallelUploads: 10,
+            clickable: true,
+            maxFilesize: 0.25,
+            uploadMultiple: true,
+            maxFiles: count,
+            addRemoveLinks: true,
+            acceptedFiles: '.png,.jpg,.jpeg',
+        });
+
+        $('#uploadfiles').click(function () {
+            myDropzone.processQueue();
+            window.location.replace("{{ BASE }}" + "/ads/edit/{{ aid }}");
+        });
+    </script>
+</main>
+{% endblock %}

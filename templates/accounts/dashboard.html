@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main role="main">
+    <div class="container">
+        <!-- Example row of columns -->
+        <div class="row">
+            <div class="col-md-12">
+                <br>
+                <ul class="nav nav-tabs" id="myTab">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#users" data-toggle="tab">Users</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#ads" data-toggle="tab">Ads</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#reviews" data-toggle="tab">Reviews</a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="users">
+                        <br>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Joined</th>
+                                        <th>Last login</th>
+                                        <th>Login count</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in results %}
+                                    <tr>
+                                        <td>{{ item.username }}</td>
+                                        <td>
+                                            <p>{{ item.email }}</p>
+                                        </td>
+                                        <td>{{ item.joined.strftime('%d/%m/%Y') }}</td>
+                                        <td>{{ item.last_login.strftime('%d/%m/%Y %H:%M:%S')}}</td>
+                                        <td>{{ item.login_count }}</td>
+                                        <td>
+                                            <form action="/accounts/user-delete/{{ item.id }}" method="post">
+                                                <button class="btn btn-danger"><i class="fa fa-trash"></i></button><br>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+
+                    <div class="tab-pane" id="ads">
+                        <br>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Content</th>
+                                        <th>Created</th>
+                                        <th>Views</th>
+                                        <th>Price</th>
+                                        <th>City</th>
+                                        <th>Address</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in ads %}
+                                    <tr>
+                                        <td>{{ item.title }}</td>
+                                        <td>
+                                            <p>{{ item.content[:30] }}...</p>
+                                        </td>
+                                        <td>{{ item.created.strftime('%d-%m-%Y %H:%M:%S') }}</td>
+                                        <td>{{ item.view }}</td>
+                                        <td>{{ item.price }} kn</td>
+                                        <td>{{ item.city }}</td>
+                                        <td>{{ item.address }}</td>
+                                        <td>
+                                            <form action="/ads/delete/{{ item.id }}" method="post">
+                                                <a href="/ads/edit/{{ item.id }}" class="btn btn-info"><i
+                                                        class="fa fa-edit"></i></a>
+                                                <button class="btn btn-danger"><i class="fa fa-trash"></i></button><br>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+                    <div class="tab-pane" id="reviews">
+                        <br>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Content</th>
+                                        <th>Created</th>
+                                        <th>Rate</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in reviews %}
+                                    <tr>
+                                        <td>
+                                            <p>{{ item.content[:50] }}...</p>
+                                        </td>
+                                        <td>{{ item.created.strftime('%d-%m-%Y %H:%M:%S') }}</td>
+                                        <td>{{ item.review_grade }}</td>
+                                        <td>
+                                            <form action="/ads/review-delete/{{ item.id }}" method="post">
+                                                <a href="/ads/review-edit/{{ item.id }}" class="btn btn-info"><i
+                                                        class="fa fa-edit"></i></a>
+                                                <button class="btn btn-danger"><i class="fa fa-trash"></i></button><br>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!--/tab-pane-->
+
+                </div>
+                <!--/tab-content-->
+            </div>
+        </div>
+    </div>
+    </div>
+    <hr>
+    </div> <!-- /container -->
+</main>
+{% endblock %}

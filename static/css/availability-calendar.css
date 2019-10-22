@@ -1,0 +1,77 @@
+/**
+ * Calendar toolbar
+ */
+.availability-calendar-toolbar {
+	padding-bottom: 15px;
+	font-size: 1.4em;
+	font-weight: bold;
+}
+
+.availability-calendar-toolbar span:last-child {float: right}
+
+.availability-calendar-toolbar input {
+	margin-left: 3px;
+	border: 1px solid #BBB;
+	cursor: pointer;
+}
+
+
+.availability-calendar-toolbar input:last-child {
+	margin-left: -1px;
+}
+
+.availability-calendar-toolbar input:hover {
+	background: #E5E5E5;
+	background-image: linear-gradient(to bottom, #EEE, #D6D6D6);
+}
+
+.availability-calendar-toolbar input:active {
+	background: #D5D5D5;
+	background-image: linear-gradient(to bottom, #DDD, #C6C6C6);
+}
+
+
+/**
+ * Calendar table and cells
+ */
+.availability-calendar {
+	width: 100%;
+	height: 10px;
+	background: #FFF;
+	table-layout: fixed;
+	border-collapse: collapse;
+}
+
+.availability-calendar th, .availability-calendar td {
+	border: 1px solid #DDD;
+	padding: 5px;
+}
+
+.availability-calendar td {
+	height: 10px;
+	vertical-align: top;
+	text-align: right;
+}
+
+.availability-calendar .ex-month {opacity: 0.4}
+.availability-calendar .unavailable {position: relative}
+
+.availability-calendar .unavailable div {
+	position: absolute;
+	top: 0%;
+	left: 0;
+	right: -1px;
+	height: 35px;
+	background-color:#BEBEBE;
+	opacity: 0.7;
+}
+
+.availability-calendar .unavailable:last-child div {right: 0}
+
+.availability-calendar .unavailable .first {
+	background-color: #BEBEBE;
+}
+
+.availability-calendar .unavailable .last {
+	background-color: #BEBEBE;
+}

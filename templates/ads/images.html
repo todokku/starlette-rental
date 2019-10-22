@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<main role="main">
+    <div class="container">
+        <br>
+        <span>* You can add up to 3 images. Use .jpg, .jpeg or .png files maximum size up to 250 kB.</span><br><br>
+        <form name='dropzone' action='/ads/upload' class='dropzone'>
+            <div class='fallback'>
+                <input name='file' type='file' multiple />
+            </div>
+        </form>
+        <br>
+        <input type="button" id='uploadfiles' class="btn btn-primary" value='Upload images'>
+    </div>
+    </div>
+    <br>
+    <hr>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="{{ url_for('static', path='/js/dropzone.js') }}"></script>
+    <script>
+        Dropzone.autoDiscover = false;
+
+        var myDropzone = new Dropzone(".dropzone", {
+            url: '/ads/upload',
+            autoProcessQueue: false,
+            parallelUploads: 10,
+            clickable: true,
+            maxFilesize: 0.25,
+            uploadMultiple: true,
+            maxFiles: 3,
+            addRemoveLinks: true,
+            acceptedFiles: '.png,.jpg,.jpeg',
+        });
+
+        $('#uploadfiles').click(function () {
+            myDropzone.processQueue();
+            window.location.replace("{{ BASE }}" + "/ads/?page=1");
+        });
+    </script>
+</main>
+{% endblock %}
