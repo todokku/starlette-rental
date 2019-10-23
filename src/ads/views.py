@@ -416,6 +416,7 @@ async def search(request):
         .filter(Q(title__icontains=q) |
                 Q(content__icontains=q) |
                 Q(city__icontains=q) |
+                Q(address__icontains=q) |
                 Q(price__icontains=q) |
                 Q(user__username__icontains=q)).distinct()
         .order_by("-id")
@@ -425,5 +426,18 @@ async def search(request):
             "request": request,
             "results": results,
             "q": q
+        }
+    )
+
+
+async def map(request):
+    """
+    Map view
+    """
+    results = await Ad.all()
+    return templates.TemplateResponse(
+        "ads/map.html", {
+            "request": request,
+            "results": results,
         }
     )
