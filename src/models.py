@@ -72,6 +72,17 @@ class Rent(Model):
         'models.Ad', related_name='ad_rent', on_delete=fields.CASCADE)
 
 
+class Notification(Model):
+    id = fields.IntField(pk=True)
+    message = fields.CharField(max_length=150)
+    created = fields.DatetimeField(auto_now_add=True)
+    is_read = fields.BooleanField(default=False)
+    sender = fields.ForeignKeyField(
+        'models.User', related_name='sender', on_delete=fields.CASCADE)
+    recipient = fields.ForeignKeyField(
+        'models.User', related_name='recipient', on_delete=fields.CASCADE)
+
+
 class UserAuthentication(AuthenticationBackend):
     async def authenticate(self, request):
         jwt_cookie = request.cookies.get("jwt")

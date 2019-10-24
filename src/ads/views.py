@@ -21,6 +21,7 @@ from models import (
     Image,
     Review,
     Rent,
+    Notification,
     ADMIN
 )
 
@@ -125,6 +126,15 @@ async def ad(request):
                 ad_rent_id=results.id,
             )
             await query.save()
+            # notification to ad owner
+            notification_query = Notification(
+                message=f"{results.title} booked by {session_user}", 
+                created=datetime.datetime.now(),
+                is_read=0, 
+                sender_id=result.id, 
+                recipient_id=results.user.id
+            )
+            await notification_query.save()
             return RedirectResponse(BASE_HOST + path, status_code=302)
     return templates.TemplateResponse(
         "ads/ad.html",
@@ -178,7 +188,7 @@ async def ad_images(request):
         }
     )
 
-# write bytes to file
+
 async def write_file(path, body):
     async with aiofiles.open(path, 'wb') as f:
         await f.write(body)
@@ -430,7 +440,7 @@ async def search(request):
     )
 
 
-async def map(request):
+async def maps(request):
     """
     Map view
     """

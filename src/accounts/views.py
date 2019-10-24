@@ -9,6 +9,7 @@ from models import (
     User,
     Ad,
     Review,
+    Notification,
     check_password,
     generate_jwt,
     hash_password,
@@ -176,6 +177,9 @@ async def profile(request):
         ads = await Ad.all().filter(user_id=results.id).order_by('-id')
         reviews = await Review.all().filter(
             review_user_id=results.id).order_by('-id')
+        notifications = await Notification.all().prefetch_related(
+            'sender').filter(recipient_id=results.id).order_by('-id')
+        unread_notifications = await Notification.filter(is_read=False)
         # rented ad by session user and from session user
         # i don't know how to make it with orm it's easier with raw sql
         async with in_transaction() as conn:
@@ -201,9 +205,21 @@ async def profile(request):
                 "rented_by_me": rented_by_me,
                 "rented_from_me": rented_from_me,
                 "reviews": reviews,
+                "notifications": notifications,
+                'unread_notifications': len(unread_notifications),
                 "auth_user": auth_user
             }
         )
+
+
+@requires("authenticated", redirect="index")
+async def read_notification(request):
+    id = request.path_params["id"]
+    if request.method == "POST":
+        results = await Notification.get(id=id)
+        results.is_read = 1
+        await results.save()
+        return RedirectResponse(url="/accounts/profile", status_code=302)
 
 
 async def logout(request):

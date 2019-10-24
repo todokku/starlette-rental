@@ -14,7 +14,7 @@ from ads.views import (
     review_edit,
     review_delete,
     search,
-    map
+    maps
 )
 
 ads_routes = Router([
@@ -45,5 +45,5 @@ ads_routes = Router([
     Route("/review-delete/{id:int}", endpoint=review_delete,
           methods=["GET", "POST"], name="review_delete"),
     Route("/search", endpoint=search, methods=["GET"], name="search"),
-    Route("/map", endpoint=map, methods=["GET"], name="map"),
+    Route("/map", endpoint=maps, methods=["GET"], name="maps"),
 ])

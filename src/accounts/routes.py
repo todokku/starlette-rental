@@ -5,7 +5,8 @@ from accounts.views import (
     login,
     profile,
     dashboard,
-    user_delete
+    user_delete,
+    read_notification
 )
 
 
@@ -19,4 +20,6 @@ accounts_routes = Router([
     Route("/dashboard", endpoint=dashboard, methods=["GET"], name="dashboard"),
     Route("/user-delete/{id:int}", endpoint=user_delete,
           methods=["GET", "POST"], name="user_delete"),
+    Route("/read/{id:int}", endpoint=read_notification,
+          methods=["GET", "POST"], name="read_notification"),
 ])
