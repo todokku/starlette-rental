@@ -21,30 +21,35 @@
             </div>
         </div>
     </div>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"
+        integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
     <script>
+        $.get(location.protocol + '//nominatim.openstreetmap.org/search?format=json&q=' + '{{ city }}', function (data) {
+            var lat = data[0].lat;
+            var lng = data[0].lon;
 
-        // Creating map options
-        var mapOptions = {
-            center: [45.55111, 18.69389],
-            zoom: 7
-        }
+            // Creating map options
+            var mapOptions = {
+                center: [lat, lng],
+                zoom: 12
+            }
 
-        // Creating a map object
-        var map = new L.map('map', mapOptions);
+            // Creating a map object
+            var map = new L.map('map', mapOptions);
 
-        // Creating a Layer object
-        var layer = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
-        });
+            // Creating a Layer object
+            var layer = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+            });
 
-        // Adding layer to the map
-        map.addLayer(layer);
+            // Adding layer to the map
+            map.addLayer(layer);
 
-        //marker.addTo(map);
-        geocoder = new L.Control.Geocoder.Nominatim();
+            //marker.addTo(map);
+            geocoder = new L.Control.Geocoder.Nominatim();
 
-        var address = [
-            {% for item in results %}
+            var address = [
+                {% for item in results %}
         ["{{ item.address }}, {{ item.city }}", "{{ item.price }} kn", "<a href='{{ url_for('ad', id=item.id , slug=item.slug) }}'> {{ item.title }}</a>"],
             {% endfor %}
         ]
@@ -59,6 +64,8 @@
                 marker.addTo(map);
             });
         }
+
+    });
     </script>
     <br>
     <hr>

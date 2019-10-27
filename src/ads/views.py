@@ -419,23 +419,30 @@ async def search(request):
     """
     Search questions
     """
-    q = request.query_params['q']
-    results = (
-        await Ad.all()
-        .prefetch_related("user", "ad_image", "ad")
-        .filter(Q(title__icontains=q) |
-                Q(content__icontains=q) |
-                Q(city__icontains=q) |
-                Q(address__icontains=q) |
-                Q(price__icontains=q) |
-                Q(user__username__icontains=q)).distinct()
-        .order_by("-id")
-    )
+    try:
+        q = request.query_params['q']
+        results = (
+            await Ad.all()
+            .prefetch_related("user", "ad_image", "ad")
+            .filter(Q(title__icontains=q) |
+                    Q(content__icontains=q) |
+                    Q(city__icontains=q) |
+                    Q(address__icontains=q) |
+                    Q(price__icontains=q) |
+                    Q(user__username__icontains=q)).distinct()
+            .order_by("-id")
+        )
+    except KeyError:
+        results = (
+            await Ad.all()
+            .prefetch_related("user", "ad_image", "ad_rent", "ad")
+            .order_by("-id")
+        )
     return templates.TemplateResponse(
         "ads/search.html", {
             "request": request,
             "results": results,
-            "q": q
+            "count": len(results)
         }
     )
 
@@ -444,10 +451,12 @@ async def maps(request):
     """
     Map view
     """
+    city = request.path_params["city"]
     results = await Ad.all()
     return templates.TemplateResponse(
         "ads/map.html", {
             "request": request,
             "results": results,
+            "city": city
         }
     )

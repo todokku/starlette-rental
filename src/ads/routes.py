@@ -45,5 +45,5 @@ ads_routes = Router([
     Route("/review-delete/{id:int}", endpoint=review_delete,
           methods=["GET", "POST"], name="review_delete"),
     Route("/search", endpoint=search, methods=["GET"], name="search"),
-    Route("/map", endpoint=maps, methods=["GET"], name="maps"),
+    Route("/map/{city:str}", endpoint=maps, methods=["GET"], name="maps"),
 ])

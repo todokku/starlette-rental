@@ -4,8 +4,34 @@
 
   <!-- Main jumbotron for a primary marketing message or call to action -->
   <div class="jumbotron">
-    <div class="container">
-      <h1 class="display-3">{{results}}</h1>
+    <div class=container>
+      <section class="search-sec">
+        <div class="container">
+          <form method="GET" action="{{ url_for('filter_search') }}">
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="row">
+                  <div class="col-lg-3 col-md-3 col-sm-12 p-0">
+                    <input id="cityInput" type="text" name="city" class="form-control search-slt"
+                      placeholder="Enter City" required>
+                  </div>
+                  <div class="col-lg-3 col-md-3 col-sm-12 p-0">
+                    <input id="checkIn" type="text" name="start" placeholder="Check In" onfocus="(this.type='date')"
+                      onblur="(this.type='text')" class="form-control search-slt" required>
+                  </div>
+                  <div class="col-lg-3 col-md-3 col-sm-12 p-0">
+                    <input id="checkOut" type="text" name="end" placeholder="Check Out" onfocus="(this.type='date')"
+                      onblur="(this.type='text')" class="form-control search-slt" required>
+                  </div>
+                  <div class="col-lg-3 col-md-3 col-sm-12 p-0">
+                    <input type="submit" onclick="DateCheck()" class="btn btn-info wrn-btn">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -36,5 +62,16 @@
     </div>
   </div> <!-- /container -->
   <hr>
+  <script>
+    function DateCheck() {
+      var StartDate = document.getElementById('checkIn').value;
+      var EndDate = document.getElementById('checkOut').value;
+      var eDate = new Date(EndDate);
+      var sDate = new Date(StartDate);
+      if (sDate > eDate) {
+        alert("Please ensure that the ckeck out date is greater than to the check in date.");
+      }
+    }
+  </script>
 </main>
 {% endblock %}

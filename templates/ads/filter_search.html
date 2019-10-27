@@ -4,10 +4,12 @@
     <br>
     <div class="container">
         <div class="row">
+            {% if results %}
             <div class="col-md-12">
                 <h3>{{ count }} result(s)</h3><br>
             </div>
-            {% if results %}
+
+
             {% for item in results %}
             <div class="col-md-3">
                 <div class="card mb-4 shadow-sm">
@@ -45,7 +47,7 @@
             {% endfor %}
             {% else %}
             <div class="col-md-3">
-                <h4>No ads</h4>
+                <h4>No available ads</h4>
             </div>
             {% endif %} 
         </div>

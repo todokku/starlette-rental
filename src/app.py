@@ -1,11 +1,13 @@
 import uvicorn
+import datetime
 from starlette.applications import Starlette
+from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.staticfiles import StaticFiles
 from secure import SecureHeaders
 from settings import SECRET_KEY, database, templates, DB_URI
-from models import UserAuthentication
+from models import UserAuthentication, Ad, Rent
 from tortoise.contrib.starlette import register_tortoise
 from accounts.routes import accounts_routes
 from ads.routes import ads_routes
@@ -38,6 +40,61 @@ async def index(request):
         "index.html", {
             "request": request,
             "results": results
+        }
+    )
+
+
+@app.route("/filter-search", methods=["GET", "POST"])
+async def filter_search(request):
+    """
+    Filter search questions by city and available ads (not rented ads in
+    required time)
+    """
+    # ads in required time
+    try:
+        city = request.query_params['city']
+        start = request.query_params['start']
+        end = request.query_params['end']
+        if start > end:
+            return RedirectResponse(url='/')
+        between = await Rent.filter(
+            start_date__lte=datetime.datetime.strptime(
+                end, "%Y-%m-%d").date(),
+            end_date__gte=datetime.datetime.strptime(
+                start, "%Y-%m-%d").date()
+        ).values_list()
+        rented = list(set([i[-1] for i in between]))
+        print(rented)
+        if rented:
+            results = (
+                await Ad.all()
+                .prefetch_related("user", "ad_image", "ad", 'ad_rent')
+                .filter(city=city,
+                        id__not_in=rented
+                        )
+                .order_by("-id")
+            )
+        # if ad not in rented list (never rented)
+        # return ads by city filter
+        else:
+            results = (
+                await Ad.all()
+                .prefetch_related("user", "ad_image", "ad", 'ad_rent')
+                .filter(city=city)
+                .order_by("-id")
+            )
+    # if form is empty return all ads
+    except KeyError:
+        results = (
+            await Ad.all()
+            .prefetch_related("user", "ad_image", "ad", 'ad_rent')
+            .order_by("-id")
+        )
+    return templates.TemplateResponse(
+        "ads/filter_search.html", {
+            "request": request,
+            "results": results,
+            "count": len(results)
         }
     )
 

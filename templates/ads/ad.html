@@ -44,8 +44,9 @@
                             {{ item.price }}
                             kn</b></small></h4>
                 <p><small>Posted on <i>{{ item.created.strftime('%d-%m-%Y %H:%M:%S') }}</i> by
-                        <b>{{ item.user.username }}</b> at <a href="{{ url_for('maps') }}"><i class="fa fa-map-marker"
-                                style="font-size: 20px; color: black" aria-hidden="true" title="Location"></i></a><b>
+                        <b>{{ item.user.username }}</b> at <a href="{{ url_for('maps', city=item.city) }}"><i
+                                class="fa fa-map-marker" style="font-size: 20px; color: black" aria-hidden="true"
+                                title="Location"></i></a><b>
                             {{ item.city }}, {{ item.address }}</b></small></p>
 
                 <p class="mb-1">{{ item.content }}</p>

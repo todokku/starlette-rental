@@ -179,7 +179,11 @@ async def profile(request):
             review_user_id=results.id).order_by('-id')
         notifications = await Notification.all().prefetch_related(
             'sender').filter(recipient_id=results.id).order_by('-id')
-        unread_notifications = await Notification.filter(is_read=False)
+        # unread notifications by profile user
+        unread_notifications = await Notification.filter(
+            is_read=False,
+            recipient=results.id
+        )
         # rented ad by session user and from session user
         # i don't know how to make it with orm it's easier with raw sql
         async with in_transaction() as conn:
