@@ -117,8 +117,7 @@
                     <div class="carousel">
                         <ul class="carousel_inner">
                             {% for img in images %}
-                            <li class="item" style="background-image: url({{ img.path[2:] }});"
-                                data-url="{{ img.path[2:] }}">
+                            <li class="item" style="background-image: url({{ img.path }});" data-url="{{ img.path }}">
                             </li>
                             {% endfor %}
                         </ul>

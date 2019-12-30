@@ -1,9 +1,17 @@
-import os
+# import os
+import cloudinary.uploader
+import cloudinary
 import datetime
 import math
-import random
+# import random
 import aiofiles
-from settings import templates, BASE_HOST, UPLOAD_FOLDER
+from settings import (
+    templates,
+    BASE_HOST,
+    CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET
+    # , UPLOAD_FOLDER
+)
 from starlette.responses import RedirectResponse
 from starlette.authentication import requires
 from tortoise.query_utils import Q
@@ -118,7 +126,7 @@ async def ad(request):
                         "rent_error": rent_error
                     },
                 )
-        except: 
+        except:
             query = Rent(
                 start_date=form.start_date.data,
                 end_date=form.end_date.data,
@@ -128,10 +136,10 @@ async def ad(request):
             await query.save()
             # notification to ad owner
             notification_query = Notification(
-                message=f"{results.title} booked by {session_user}", 
+                message=f"{results.title} booked by {session_user}",
                 created=datetime.datetime.now(),
-                is_read=0, 
-                sender_id=result.id, 
+                is_read=0,
+                sender_id=result.id,
                 recipient_id=results.user.id
             )
             await notification_query.save()
@@ -197,6 +205,33 @@ async def write_file(path, body):
 
 @requires("authenticated")
 async def upload(request):
+    """
+    upload images to Cloudinary because Heroku filesystem is not suitable \
+    for files upload. More info on link
+    https://help.heroku.com/K1PPS2WM/why-are-my-file-uploads-missing-deleted
+    """
+    result = await Ad.all()
+    # last inserted ad id
+    aid = result[-1].id
+    data = await request.form()
+    iter_images = data.multi_items()
+    num_of_images = len([i for i in iter_images if i[1] != ''])
+    # list of images paths
+    images = [data["images" + str(i)] for i in range(num_of_images)]
+    # save images path and last inserted ad id to db
+    for item in images:
+        async with in_transaction() as conn:
+            await conn.execute_query(
+                f"INSERT INTO image (path, ad_image_id) \
+                    VALUES ('{item}', {aid});"
+            )
+    return RedirectResponse(url="/ads/?page=1", status_code=302)
+
+"""
+- uncomment for Dropzone upload to filesystem
+
+@requires("authenticated")
+async def upload(request):
     result = await Ad.all()
     # last inserted ad id
     aid = result[-1].id
@@ -220,6 +255,7 @@ async def upload(request):
                     VALUES (\"{item}\", {aid});"
             )
     return RedirectResponse(url="/ads/?page=1", status_code=302)
+"""
 
 
 @requires("authenticated")
@@ -280,6 +316,29 @@ async def image_edit(request):
 
 @requires("authenticated")
 async def edit_upload(request):
+    # edited ad id
+    aid = int((request.url.path).split('/')[-1])
+    img_count = await Image.all().filter(ad_image_id=aid).count()
+    data = await request.form()
+    # list of remaining images paths
+    images = [data["images" + str(i)] for i in range(3-img_count)]
+    # save images path and last inserted ad id to db
+    for item in images:
+        async with in_transaction() as conn:
+            await conn.execute_query(
+                f"INSERT INTO image (path, ad_image_id) \
+                    VALUES ('{item}', {aid});"
+            )
+    return RedirectResponse(BASE_HOST + f"/ads/edit/{aid}",
+                            status_code=302
+                            )
+
+
+"""
+- uncomment for Dropzone upload to filesystem
+
+@requires("authenticated")
+async def edit_upload(request):
     if request.method == "POST":
         # edited ad id
         aid = int((request.url.path).split('/')[-1])
@@ -297,14 +356,16 @@ async def edit_upload(request):
             await write_file(file_path, upload_file)
         # store file paths to db and link to single ad
         for item in list_of_paths:
+            print(item)
             async with in_transaction() as conn:
                 await conn.execute_query(
                     f"INSERT INTO image (path, ad_image_id) \
-                        VALUES (\"{item}\", {aid});"
+                        VALUES ('{item}', {aid});"
                 )
         return RedirectResponse(BASE_HOST + f"/ads/edit/{aid}#loaded",
                                 status_code=302
                                 )
+"""
 
 
 @requires("authenticated")
@@ -317,8 +378,17 @@ async def image_delete(request):
     aid = form["aid"]
     if request.method == "POST":
         # delete related image from filesystem
+        # uncomment for Dropzone upload to filesystem
+        # img = await Image.get(id=id)
+        # os.remove(img.path)
         img = await Image.get(id=id)
-        os.remove(img.path)
+        public_id = (img.path).split('/')[-1].split('.')[0]
+        cloudinary.config(
+            cloud_name="rkl",
+            api_key=CLOUDINARY_API_KEY,
+            api_secret=CLOUDINARY_API_SECRET
+        )
+        cloudinary.uploader.destroy(public_id)
         await Image.get(id=id).delete()
         return RedirectResponse(url=f"/ads/edit/{aid}", status_code=302)
 
@@ -330,9 +400,19 @@ async def ad_delete(request):
     """
     id = request.path_params["id"]
     if request.method == "POST":
+        # delete images from filesystem
         images = await Image.all().filter(ad_image_id=id)
-        for img in images:
-            os.remove(img.path)
+        # for img in images:
+        # os.remove(img.path)
+        cloudinary.config(
+            cloud_name="rkl",
+            api_key=CLOUDINARY_API_KEY,
+            api_secret=CLOUDINARY_API_SECRET
+        )
+        public_ids = [
+            (img.path).split('/')[-1].split('.')[0] for img in images
+            ]
+        cloudinary.api.delete_resources(public_ids)
         await Ad.get(id=id).delete()
         if request.user.username == ADMIN:
             return RedirectResponse(url="/accounts/dashboard", status_code=302)

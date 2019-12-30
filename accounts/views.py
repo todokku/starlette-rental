@@ -1,6 +1,13 @@
-import os
+# import os
 import datetime
-from settings import templates, BASE_HOST
+import cloudinary.uploader
+import cloudinary
+from settings import (
+    templates,
+    BASE_HOST,
+    CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET
+)
 from starlette.responses import RedirectResponse
 from starlette.authentication import requires
 from tortoise.transactions import in_transaction
@@ -133,16 +140,24 @@ async def user_delete(request):
         # delete related user images in filesystem
         async with in_transaction() as conn:
             result = await conn.execute_query(
-                f"SELECT path FROM image \
+                f'SELECT path FROM image \
                 JOIN ad on ad.id = image.ad_image_id \
-                JOIN user on user.id = ad.user_id WHERE user.id = {id}"
+                JOIN "user" on "user".id = ad.user_id \
+                WHERE "user".id = {id}'
             )
         image_list = []
         for i in result:
             for k, v in i.items():
                 image_list.append(v)
-        for img in image_list:
-            os.remove(img)
+        cloudinary.config(
+            cloud_name="rkl",
+            api_key=CLOUDINARY_API_KEY,
+            api_secret=CLOUDINARY_API_SECRET
+        )
+        public_ids = [img.split('/')[-1].split('.')[0] for img in image_list]
+        cloudinary.api.delete_resources(public_ids)
+        # for img in image_list:
+        # os.remove(img)
         await User.get(id=id).delete()
         request.session.clear()
         response = RedirectResponse(url="/", status_code=302)
@@ -188,17 +203,18 @@ async def profile(request):
         # i don't know how to make it with orm it's easier with raw sql
         async with in_transaction() as conn:
             rented_by_me = await conn.execute_query(
-                f"SELECT ad.title, rent.start_date, rent.end_date, \
-                (SELECT username from user WHERE ad.user_id = user.id) as usr FROM ad \
+                f'SELECT title, start_date, end_date, \
+                (SELECT username from "user" WHERE ad.user_id = "user".id) as usr FROM ad \
                 JOIN rent ON ad.id=rent.ad_rent_id \
-                JOIN user ON user.id=ad.user_id WHERE rent.client_id={results.id}"
+                JOIN "user" ON "user".id=ad.user_id \
+                WHERE rent.client_id={results.id}'
             )
         async with in_transaction() as conn:
             rented_from_me = await conn.execute_query(
-                f"SELECT ad.title, rent.start_date, rent.end_date, \
-                (SELECT username from user WHERE rent.client_id = user.id) as usr FROM ad \
+                f'SELECT ad.title, rent.start_date, rent.end_date, \
+                (SELECT username from "user" WHERE rent.client_id = "user".id) as usr FROM ad \
                 JOIN rent ON ad.id = rent.ad_rent_id \
-                JOIN user ON user.id = ad.user_id WHERE user.id={results.id}"
+                JOIN "user" ON "user".id = ad.user_id WHERE "user".id={results.id}'
             )
         return templates.TemplateResponse(
             "accounts/profile.html",
