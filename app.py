@@ -46,7 +46,7 @@ async def filter_search(request):
             results = (
                 await Ad.all()
                 .prefetch_related("user", "ad_image", "ad", "ad_rent")
-                .filter(city=city, id__not_in=rented)
+                .filter(city=city.title(), id__not_in=rented)
                 .order_by("-id")
             )
         # if ad not in rented list (never rented)
@@ -55,7 +55,7 @@ async def filter_search(request):
             results = (
                 await Ad.all()
                 .prefetch_related("user", "ad_image", "ad", "ad_rent")
-                .filter(city=city)
+                .filter(city=city.title())
                 .order_by("-id")
             )
     # if form is empty return all ads
