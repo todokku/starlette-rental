@@ -1,12 +1,10 @@
-import datetime
 from starlette.applications import Starlette
-from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.authentication import AuthenticationMiddleware
 from secure import SecureHeaders
 from starlette.staticfiles import StaticFiles
 from starlette.routing import Route
-from models import UserAuthentication, Ad, Rent
+from models import UserAuthentication
 from tortoise.contrib.starlette import register_tortoise
 from settings import templates, DB_URI, SECRET_KEY
 from accounts.routes import accounts_routes
@@ -23,59 +21,9 @@ secure_headers = SecureHeaders()
 async def index(request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-
-async def filter_search(request):
-    """
-    Filter search questions by city and available ads (not rented ads in
-    required time)
-    """
-    # ads in required time
-    try:
-        city = request.query_params["city"]
-        start = request.query_params["start"]
-        end = request.query_params["end"]
-        if start > end:
-            return RedirectResponse(url="/")
-        between = await Rent.filter(
-            start_date__lte=datetime.datetime.strptime(end, "%Y-%m-%d").date(),
-            end_date__gte=datetime.datetime.strptime(start, "%Y-%m-%d").date(),
-        ).values_list()
-        rented = list(set([i[-1] for i in between]))
-        print(rented)
-        if rented:
-            results = (
-                await Ad.all()
-                .prefetch_related("user", "ad_image", "ad", "ad_rent")
-                .filter(city=city.title(), id__not_in=rented)
-                .order_by("-id")
-            )
-        # if ad not in rented list (never rented)
-        # return ads by city filter
-        else:
-            results = (
-                await Ad.all()
-                .prefetch_related("user", "ad_image", "ad", "ad_rent")
-                .filter(city=city.title())
-                .order_by("-id")
-            )
-    # if form is empty return all ads
-    except KeyError:
-        results = (
-            await Ad.all()
-            .prefetch_related("user", "ad_image", "ad", "ad_rent")
-            .order_by("-id")
-        )
-    return templates.TemplateResponse(
-        "ads/filter_search.html",
-        {"request": request, "results": results, "count": len(results)},
-    )
-
-
 routes = [
     Route("/", index),
-    Route("/filter-search", filter_search, methods=["GET", "POST"]),
 ]
-
 
 app = Starlette(debug=True, routes=routes)
 app.mount("/static", StaticFiles(directory="static"), name="static")

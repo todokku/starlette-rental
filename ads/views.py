@@ -527,6 +527,53 @@ async def search(request):
     )
 
 
+async def filter_search(request):
+    """
+    Filter search questions by city and available ads (not rented ads in
+    required time)
+    """
+    # ads in required time
+    try:
+        city = request.query_params["city"]
+        start = request.query_params["start"]
+        end = request.query_params["end"]
+        if start > end:
+            return RedirectResponse(url="/")
+        between = await Rent.filter(
+            start_date__lte=datetime.datetime.strptime(end, "%Y-%m-%d").date(),
+            end_date__gte=datetime.datetime.strptime(start, "%Y-%m-%d").date(),
+        ).values_list()
+        rented = list(set([i[-1] for i in between]))
+        print(rented)
+        if rented:
+            results = (
+                await Ad.all()
+                .prefetch_related("user", "ad_image", "ad", "ad_rent")
+                .filter(city=city.title(), id__not_in=rented)
+                .order_by("-id")
+            )
+        # if ad not in rented list (never rented)
+        # return ads by city filter
+        else:
+            results = (
+                await Ad.all()
+                .prefetch_related("user", "ad_image", "ad", "ad_rent")
+                .filter(city=city.title())
+                .order_by("-id")
+            )
+    # if form is empty return all ads
+    except KeyError:
+        results = (
+            await Ad.all()
+            .prefetch_related("user", "ad_image", "ad", "ad_rent")
+            .order_by("-id")
+        )
+    return templates.TemplateResponse(
+        "ads/filter_search.html",
+        {"request": request, "results": results, "count": len(results)},
+    )
+
+
 async def maps(request):
     """
     Map view
