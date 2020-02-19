@@ -40,12 +40,10 @@ async def ads_all(request):
     """
     path = request.url.path
     page_query = request.query_params['page']
-    result = await Ad.all()
-    count = len(result)
-    page = int(page_query)
+    result = await Ad.all().count()
     per = 8
-    totalPages = int(math.ceil(count / per))
-    offset = per * (page - 1)
+    total_pages = int(math.ceil(result / per))
+    offset = per * (int(page_query) - 1)
     results = await Ad.all().prefetch_related(
         "user", "ad_image", "ad").limit(per).offset(offset).order_by('-id')
     return templates.TemplateResponse(
@@ -54,7 +52,7 @@ async def ads_all(request):
             "request": request,
             "results": results,
             "path": path,
-            "totalPages": totalPages,
+            "totalPages": total_pages,
             "page_query": page_query,
         },
     )
@@ -113,19 +111,19 @@ async def ad(request):
             if any(between):
                 rent_error = "Already rented in that time."
             return templates.TemplateResponse(
-                    "ads/ad.html",
-                    {
-                        "request": request,
-                        "item": results,
-                        "path": path,
-                        "images": image_results,
-                        "review_results": review_results,
-                        "review_count": len(review_results),
-                        "review_avg": review_avg,
-                        "form": form,
-                        "rent_error": rent_error
-                    },
-                )
+                "ads/ad.html",
+                {
+                    "request": request,
+                    "item": results,
+                    "path": path,
+                    "images": image_results,
+                    "review_results": review_results,
+                    "review_count": len(review_results),
+                    "review_avg": review_avg,
+                    "form": form,
+                    "rent_error": rent_error
+                },
+            )
         except:
             query = Rent(
                 start_date=form.start_date.data,
@@ -411,7 +409,7 @@ async def ad_delete(request):
         )
         public_ids = [
             (img.path).split('/')[-1].split('.')[0] for img in images
-            ]
+        ]
         cloudinary.api.delete_resources(public_ids)
         await Ad.get(id=id).delete()
         if request.user.username == ADMIN:
