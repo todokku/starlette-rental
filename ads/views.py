@@ -16,6 +16,7 @@ from starlette.responses import RedirectResponse
 from starlette.authentication import requires
 from tortoise.query_utils import Q
 from tortoise.transactions import in_transaction
+from utils import pagination
 from ads.forms import (
     AdForm,
     AdEditForm,
@@ -38,22 +39,27 @@ async def ads_all(request):
     """
     All ads
     """
-    path = request.url.path
-    page_query = request.query_params['page']
-    result = await Ad.all().count()
-    per = 8
-    total_pages = int(math.ceil(result / per))
-    offset = per * (int(page_query) - 1)
-    results = await Ad.all().prefetch_related(
-        "user", "ad_image", "ad").limit(per).offset(offset).order_by('-id')
+    page_query = pagination.get_page_number(url=request.url)
+    count = await Ad.all().count()
+    paginator = pagination.Pagination(page_query, count)
+    results = (
+        await Ad.all()
+        .prefetch_related("user", "ad_image", "ad")
+        .limit(paginator.page_size)
+        .offset(paginator.offset())
+        .order_by('-id')
+    )
+    page_controls = pagination.get_page_controls(
+        url=request.url,
+        current_page=paginator.current_page(),
+        total_pages=paginator.total_pages()
+    )
     return templates.TemplateResponse(
         "ads/ads.html",
         {
             "request": request,
             "results": results,
-            "path": path,
-            "totalPages": total_pages,
-            "page_query": page_query,
+            "page_controls": page_controls
         },
     )
 
@@ -223,7 +229,7 @@ async def upload(request):
                 f"INSERT INTO image (path, ad_image_id) \
                     VALUES ('{item}', {aid});"
             )
-    return RedirectResponse(url="/ads/?page=1", status_code=302)
+    return RedirectResponse(url="/ads/", status_code=302)
 
 """
 - uncomment for Dropzone upload to filesystem
@@ -252,7 +258,7 @@ async def upload(request):
                 f"INSERT INTO image (path, ad_image_id) \
                     VALUES (\"{item}\", {aid});"
             )
-    return RedirectResponse(url="/ads/?page=1", status_code=302)
+    return RedirectResponse(url="/ads/", status_code=302)
 """
 
 
@@ -327,9 +333,10 @@ async def edit_upload(request):
                 f"INSERT INTO image (path, ad_image_id) \
                     VALUES ('{item}', {aid});"
             )
-    return RedirectResponse(BASE_HOST + f"/ads/edit/{aid}",
-                            status_code=302
-                            )
+    return RedirectResponse(
+        BASE_HOST + f"/ads/edit/{aid}",
+        status_code=302
+    )
 
 
 """
@@ -498,7 +505,21 @@ async def search(request):
     Search questions
     """
     try:
+        page_query = pagination.get_page_number(url=request.url)
         q = request.query_params['q']
+        count = (
+            await Ad.all()
+            .prefetch_related("user", "ad_image", "ad")
+            .filter(Q(title__icontains=q) |
+                    Q(content__icontains=q) |
+                    Q(city__icontains=q) |
+                    Q(address__icontains=q) |
+                    Q(price__icontains=q) |
+                    Q(user__username__icontains=q))
+            .distinct()
+            .count()
+        )
+        paginator = pagination.Pagination(page_query, count)
         results = (
             await Ad.all()
             .prefetch_related("user", "ad_image", "ad")
@@ -507,20 +528,41 @@ async def search(request):
                     Q(city__icontains=q) |
                     Q(address__icontains=q) |
                     Q(price__icontains=q) |
-                    Q(user__username__icontains=q)).distinct()
-            .order_by("-id")
+                    Q(user__username__icontains=q))
+            .distinct()
+            .limit(paginator.page_size)
+            .offset(paginator.offset())
+        )
+        page_controls = pagination.get_page_controls(
+            url=request.url,
+            current_page=paginator.current_page(),
+            total_pages=paginator.total_pages()
         )
     except KeyError:
+        page_query = pagination.get_page_number(url=request.url)
+        count = (
+            await Ad.all()
+            .prefetch_related("user", "ad_image", "ad_rent", "ad")
+            .count()
+        )
+        paginator = pagination.Pagination(page_query, count)
         results = (
             await Ad.all()
             .prefetch_related("user", "ad_image", "ad_rent", "ad")
-            .order_by("-id")
+            .limit(paginator.page_size)
+            .offset(paginator.offset())
+        )
+        page_controls = pagination.get_page_controls(
+            url=request.url,
+            current_page=paginator.current_page(),
+            total_pages=paginator.total_pages()
         )
     return templates.TemplateResponse(
         "ads/search.html", {
             "request": request,
             "results": results,
-            "count": len(results)
+            "page_controls": page_controls,
+            "count": count
         }
     )
 
@@ -544,31 +586,77 @@ async def filter_search(request):
         rented = list(set([i[-1] for i in between]))
         print(rented)
         if rented:
+            page_query = pagination.get_page_number(url=request.url)
+            count = (
+                await Ad.all()
+                .prefetch_related("user", "ad_image", "ad", "ad_rent")
+                .filter(city=city.title(), id__not_in=rented)
+                .count()
+            )
+            paginator = pagination.Pagination(page_query, count)
             results = (
                 await Ad.all()
                 .prefetch_related("user", "ad_image", "ad", "ad_rent")
                 .filter(city=city.title(), id__not_in=rented)
-                .order_by("-id")
+                .limit(paginator.page_size)
+                .offset(paginator.offset())
+            )
+            page_controls = pagination.get_page_controls(
+                url=request.url,
+                current_page=paginator.current_page(),
+                total_pages=paginator.total_pages()
             )
         # if ad not in rented list (never rented)
         # return ads by city filter
         else:
+            page_query = pagination.get_page_number(url=request.url)
+            count = (
+                await Ad.all()
+                .prefetch_related("user", "ad_image", "ad", "ad_rent")
+                .filter(city=city.title())
+                .count()
+            )
+            paginator = pagination.Pagination(page_query, count)
             results = (
                 await Ad.all()
                 .prefetch_related("user", "ad_image", "ad", "ad_rent")
                 .filter(city=city.title())
-                .order_by("-id")
+                .limit(paginator.page_size)
+                .offset(paginator.offset())
+            )
+            page_controls = pagination.get_page_controls(
+                url=request.url,
+                current_page=paginator.current_page(),
+                total_pages=paginator.total_pages()
             )
     # if form is empty return all ads
     except KeyError:
+        page_query = pagination.get_page_number(url=request.url)
+        count = (
+            await Ad.all()
+            .prefetch_related("user", "ad_image", "ad", "ad_rent")
+            .count()
+        )
+        paginator = pagination.Pagination(page_query, count)
         results = (
             await Ad.all()
             .prefetch_related("user", "ad_image", "ad", "ad_rent")
-            .order_by("-id")
+            .limit(paginator.page_size)
+            .offset(paginator.offset())
+        )
+        page_controls = pagination.get_page_controls(
+            url=request.url,
+            current_page=paginator.current_page(),
+            total_pages=paginator.total_pages()
         )
     return templates.TemplateResponse(
         "ads/filter_search.html",
-        {"request": request, "results": results, "count": len(results)},
+        {
+            "request": request,
+            "results": results,
+            "page_controls": page_controls,
+            "count": count
+        }
     )
 
 

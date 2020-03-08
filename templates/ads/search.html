@@ -5,9 +5,12 @@
     <div class="container">
         <div class="row">
             <div class="col-md-12">
-                <h3>{{ count }} result(s)</h3><br>
+                {% include 'ads/search_form.html' %}
             </div>
             {% if results %}
+            <div class="col-md-12">
+                <h3>{{ count }} result(s)</h3><br>
+            </div>
             {% for item in results %}
             <div class="col-md-3">
                 <div class="card mb-4 shadow-sm">
@@ -49,6 +52,8 @@
             </div>
             {% endif %} 
         </div>
+        {% include 'ads/pagination.html' %}
+        <br>
         <br>
     </div> <!-- /container -->
     <hr>

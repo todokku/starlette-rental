@@ -52,7 +52,7 @@
           {% endif %}
         </ul>
         <ul class="navbar-nav">
-          <a class="nav-link" href="{{ url_for('ads_all') }}?page=1">Ads</a>
+          <a class="nav-link" href="{{ url_for('ads_all') }}">Ads</a>
           {% if not request.user.username %}
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('login') }}?next=/">Login</a>

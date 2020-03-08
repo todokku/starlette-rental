@@ -22,7 +22,7 @@ async def index(request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 routes = [
-    Route("/", index),
+    Route("/", index)
 ]
 
 app = Starlette(debug=True, routes=routes)
